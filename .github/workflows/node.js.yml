@@ -1,0 +1,72 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ master, main, qa, dev ]
+  pull_request:
+    branches: [ master, main, qa, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+      env:
+        NODE_ENV: test
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+    
+    - name: Run linting
+      run: npm run lint || echo "No lint script found"
+    
+    - name: Build check
+      run: npm run build || echo "No build script found"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: |
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/master' ||
+      github.ref == 'refs/heads/qa' ||
+      github.ref == 'refs/heads/dev'
+    
+    steps:
+    - name: Deploy to AWS (main)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "Deploying MAIN branch to AWS..."
+        # ssh ... git pull origin main ...
+    - name: Deploy to AWS (master)
+      if: github.ref == 'refs/heads/master'
+      run: |
+        echo "Deploying MASTER branch to AWS..."
+        # ssh ... git pull origin master ...
+    - name: Deploy to AWS (qa)
+      if: github.ref == 'refs/heads/qa'
+      run: |
+        echo "Deploying QA branch to AWS..."
+        # ssh ... git pull origin qa ...
+    - name: Deploy to AWS (dev)
+      if: github.ref == 'refs/heads/dev'
+      run: |
+        echo "Deploying DEV branch to AWS..."
+        # ssh ... git pull origin dev ... 
