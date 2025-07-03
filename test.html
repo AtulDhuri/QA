@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <div>
+        <h3>Register Test</h3>
+        <button onclick="testRegister()">Test Register</button>
+        <div id="registerResult"></div>
+    </div>
+    <div>
+        <h3>Login Test</h3>
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <script>
+        async function testRegister() {
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: 'testuser', 
+                        password: 'testpass', 
+                        role: 'user' 
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('registerResult').innerHTML = 
+                    `Status: ${response.status}<br>Response: ${JSON.stringify(data)}`;
+            } catch (error) {
+                document.getElementById('registerResult').innerHTML = 
+                    `Error: ${error.message}`;
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: 'testuser', 
+                        password: 'testpass'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('loginResult').innerHTML = 
+                    `Status: ${response.status}<br>Response: ${JSON.stringify(data)}`;
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
