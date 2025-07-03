@@ -1,72 +1,33 @@
-name: Node.js CI/CD
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
 
 on:
   push:
-    branches: [ master, main, qa, dev ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ master, main, qa, dev ]
+    branches: [ "main" ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+
+    runs-on: self-hosted
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v4
-    
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
-      env:
-        NODE_ENV: test
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-    
-    - name: Run linting
-      run: npm run lint || echo "No lint script found"
-    
-    - name: Build check
-      run: npm run build || echo "No build script found"
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: |
-      github.ref == 'refs/heads/main' ||
-      github.ref == 'refs/heads/master' ||
-      github.ref == 'refs/heads/qa' ||
-      github.ref == 'refs/heads/dev'
-    
-    steps:
-    - name: Deploy to AWS (main)
-      if: github.ref == 'refs/heads/main'
-      run: |
-        echo "Deploying MAIN branch to AWS..."
-        # ssh ... git pull origin main ...
-    - name: Deploy to AWS (master)
-      if: github.ref == 'refs/heads/master'
-      run: |
-        echo "Deploying MASTER branch to AWS..."
-        # ssh ... git pull origin master ...
-    - name: Deploy to AWS (qa)
-      if: github.ref == 'refs/heads/qa'
-      run: |
-        echo "Deploying QA branch to AWS..."
-        # ssh ... git pull origin qa ...
-    - name: Deploy to AWS (dev)
-      if: github.ref == 'refs/heads/dev'
-      run: |
-        echo "Deploying DEV branch to AWS..."
-        # ssh ... git pull origin dev ... 
+    - run: npm ci
+    - run: |
+        touch .env
+        echo "${{ secrets.PROD_ENV }}" > .env
+    - run: pm2 start server.js --name my-app || pm2 restart my-app
