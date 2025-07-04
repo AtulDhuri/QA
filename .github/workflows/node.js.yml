@@ -30,4 +30,6 @@ jobs:
     - run: |
         touch .env
         echo "${{ secrets.PROD_ENV }}" > .env
-    - run: pm2 start server.js --name my-app || pm2 restart my-app
+    - run: |
+         pm2 delete my-app || true
+        pm2 start server.js --name my-app || pm2 restart my-app
