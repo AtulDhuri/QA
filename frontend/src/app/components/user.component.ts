@@ -220,7 +220,7 @@ export class UserComponent implements OnInit {
   }
 
   loadQuestions() {
-    this.questionService.getQuestions().subscribe(questions => {
+    this.questionService.getUserQuestions().subscribe(questions => {
       this.questions = questions;
       this.buildForm();
     });

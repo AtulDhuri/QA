@@ -8,9 +8,12 @@ const remarkSchema = new mongoose.Schema({
 });
 
 const responseSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  formId: { type: mongoose.Schema.Types.ObjectId, ref: 'Form', required: true },
+  adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   remarks: [remarkSchema],
-  clientRating: { type: Number, min: 0, max: 5 } // Average rating out of 5
+  clientRating: { type: Number, min: 0, max: 5 }, // Average rating out of 5
+  submittedAt: { type: Date, default: Date.now }
 }, { 
   timestamps: true,
   strict: false // Allow any fields to be saved

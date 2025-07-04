@@ -49,6 +49,9 @@ import { CommonModule } from '@angular/common';
         <button class="nav-tab" [class.active]="showSection === 'preview'" (click)="setSection('preview')" [disabled]="questions.length === 0">
           Preview Form
         </button>
+        <button class="nav-tab" [class.active]="showSection === 'users'" (click)="setSection('users')">
+          Manage Users
+        </button>
       </div>
 
       <div *ngIf="showSection === 'questions'">
@@ -375,15 +378,81 @@ import { CommonModule } from '@angular/common';
           </div>
         </div>
       </div>
+      
+      <!-- User Management Section -->
+      <div *ngIf="showSection === 'users'">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Create New User</h2>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="userForm" (ngSubmit)="createUser()">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Username <span class="required">*</span></label>
+                  <input type="text" formControlName="username" placeholder="Enter username">
+                  <div class="error" *ngIf="userForm.get('username')?.invalid && userForm.get('username')?.touched">
+                    Username is required
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Password <span class="required">*</span></label>
+                  <input type="password" formControlName="password" placeholder="Enter password">
+                  <div class="error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+                    Password is required
+                  </div>
+                </div>
+              </div>
+              
+              <div class="btn-group" style="margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+                  Create User
+                </button>
+                <button type="button" class="btn btn-outline" (click)="resetUserForm()">
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">My Users ({{users.length}})</h2>
+          </div>
+          <div class="card-body">
+            <div *ngIf="users.length === 0" class="alert alert-info">
+              No users created yet. Create your first user above.
+            </div>
+            
+            <div *ngFor="let user of users" class="user-item">
+              <div class="user-info">
+                <div class="user-name">{{user.username}}</div>
+                <div class="user-meta">
+                  <span>Created: {{user.createdAt | date:'short'}}</span>
+                </div>
+              </div>
+              <div class="user-actions">
+                <button class="btn btn-danger btn-sm" (click)="deleteUser(user._id)">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
 export class AdminComponent implements OnInit {
   questionForm: FormGroup;
   editForm: FormGroup;
+  userForm: FormGroup;
   questions: any[] = [];
   responses: any[] = [];
   filteredResponses: any[] = [];
+  users: any[] = [];
   ratingFilter: string = 'all';
   hasResponses = false;
   showOptions = false;
@@ -419,11 +488,17 @@ export class AdminComponent implements OnInit {
       minLength: [''],
       maxLength: ['']
     });
+    
+    this.userForm = this.fb.group({
+      username: ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
   }
 
   ngOnInit() {
     this.loadQuestions();
     this.loadResponses();
+    this.loadUsers();
   }
 
   onInputTypeChange() {
@@ -496,6 +571,49 @@ export class AdminComponent implements OnInit {
       'textarea': `Provide details for ${question.text.toLowerCase()}`
     };
     return placeholders[question.inputType] || `Enter ${question.text.toLowerCase()}`;
+  }
+  
+  loadUsers() {
+    this.questionService.getAdminUsers().subscribe({
+      next: (users) => {
+        this.users = users;
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+      }
+    });
+  }
+  
+  createUser() {
+    if (this.userForm.valid) {
+      const userData = this.userForm.value;
+      this.questionService.createUser(userData).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.resetUserForm();
+        },
+        error: (error) => {
+          console.error('Error creating user:', error);
+        }
+      });
+    }
+  }
+  
+  resetUserForm() {
+    this.userForm.reset();
+  }
+  
+  deleteUser(userId: string) {
+    if (confirm('Are you sure you want to delete this user?')) {
+      this.questionService.deleteUser(userId).subscribe({
+        next: () => {
+          this.loadUsers();
+        },
+        error: (error) => {
+          console.error('Error deleting user:', error);
+        }
+      });
+    }
   }
 
   loadQuestions() {

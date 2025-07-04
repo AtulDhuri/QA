@@ -45,6 +45,22 @@ export class QuestionService {
     return this.http.get<any[]>(`${environment.apiUrl}/responses/field/${field}/${value}`);
   }
   
+  getAdminUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/auth/users`);
+  }
+  
+  createUser(userData: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/auth/create-user`, userData);
+  }
+  
+  deleteUser(userId: string): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/auth/users/${userId}`);
+  }
+  
+  getUserQuestions(): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/questions/user-questions`);
+  }
+  
   updateResponse(id: string, response: any): Observable<any> {
     return this.http.put(`${environment.apiUrl}/responses/${id}`, response);
   }

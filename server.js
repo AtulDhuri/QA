@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, 'middleware/www/dynamic-form-fronten
 }));
 
 // MongoDB connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/dynamicforms';
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/allbusiness';
 
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,

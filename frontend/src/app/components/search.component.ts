@@ -122,24 +122,22 @@ import { Router } from '@angular/router';
             <table class="response-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Mobile</th>
-                  <th>Email</th>
+                  <th>{{getFieldLabel('name')}}</th>
+                  <th>{{getFieldLabel('contact')}}</th>
+                  <th>{{getFieldLabel('email')}}</th>
                   <th>Rating</th>
-                  <th>Submitted</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let response of responses" (click)="viewDetails(response)" class="table-row">
-                  <td>{{getFieldValue(response, 'Enter your Full Name') || 'N/A'}}</td>
-                  <td>{{getFieldValue(response, 'Mobile') || getFieldValue(response, 'Phone') || 'N/A'}}</td>
-                  <td>{{getFieldValue(response, 'Email') || 'N/A'}}</td>
+                  <td>{{getFieldValue(response, 'name')}}</td>
+                  <td>{{getFieldValue(response, 'contact')}}</td>
+                  <td>{{getFieldValue(response, 'email')}}</td>
                   <td>
                     <span *ngIf="response.clientRating" class="rating-badge">{{response.clientRating}}/5</span>
                     <span *ngIf="!response.clientRating">No Rating</span>
                   </td>
-                  <td>{{response.submittedAt | date:'short'}}</td>
                   <td>
                     <button class="btn btn-primary btn-sm" (click)="editResponse(response); $event.stopPropagation()">
                       Edit
@@ -370,16 +368,101 @@ export class SearchComponent {
     }
   }
   
-  getFieldValue(response: any, fieldName: string): string {
-    return response[fieldName] || '';
-  }
-  
   viewDetails(response: any) {
     this.selectedResponse = response;
   }
   
   closeDetails() {
     this.selectedResponse = null;
+  }
+  
+  getFieldLabel(fieldType: string): string {
+    const field = this.detectField(fieldType);
+    return field ? field : this.getDefaultLabel(fieldType);
+  }
+  
+  getFieldValue(response: any, fieldType: string): string {
+    const fieldName = this.detectField(fieldType);
+    if (!fieldName) return 'N/A';
+    
+    const value = response[fieldName];
+    if (!value) return 'N/A';
+    
+    // Handle checkbox objects
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      const selectedValues = Object.entries(value)
+        .filter(([k, v]) => v === true)
+        .map(([k, v]) => k);
+      return selectedValues.length > 0 ? selectedValues.join(', ') : 'None';
+    }
+    
+    // Handle arrays
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+    
+    return value.toString();
+  }
+  
+  private detectField(fieldType: string): string | null {
+    if (this.responses.length === 0) return null;
+    
+    const sampleResponse = this.responses[0];
+    const fieldNames = Object.keys(sampleResponse).filter(key => !this.isSystemField(key));
+    
+    switch (fieldType) {
+      case 'name':
+        return fieldNames.find(name => 
+          name.toLowerCase().includes('name') || 
+          name.toLowerCase().includes('full') ||
+          name.toLowerCase().includes('customer')
+        ) || null;
+        
+      case 'contact':
+        return fieldNames.find(name => 
+          name.toLowerCase().includes('mobile') || 
+          name.toLowerCase().includes('phone') ||
+          name.toLowerCase().includes('contact') ||
+          name.toLowerCase().includes('number')
+        ) || null;
+        
+      case 'email':
+        return fieldNames.find(name => 
+          name.toLowerCase().includes('email') ||
+          name.toLowerCase().includes('mail')
+        ) || null;
+        
+      case 'other':
+        // Find first field that's not name, contact, or email
+        const usedFields = [
+          this.detectField('name'),
+          this.detectField('contact'), 
+          this.detectField('email')
+        ].filter(f => f !== null);
+        
+        return fieldNames.find(name => !usedFields.includes(name)) || null;
+        
+      default:
+        return null;
+    }
+  }
+  
+  private getDefaultLabel(fieldType: string): string {
+    const labels: {[key: string]: string} = {
+      'name': 'Name',
+      'contact': 'Contact',
+      'email': 'Email',
+      'other': 'Other'
+    };
+    return labels[fieldType] || 'Field';
+  }
+  
+  private isSystemField(fieldName: string): boolean {
+    const systemFields = [
+      '_id', '__v', 'userId', 'formId', 'adminId', 'createdAt', 
+      'updatedAt', 'submittedAt', 'remarks', 'clientRating'
+    ];
+    return systemFields.includes(fieldName);
   }
 
   searchByMobile() {

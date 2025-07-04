@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const { JWT_SECRET, REFRESH_SECRET } = require('../config');
 
@@ -11,11 +12,22 @@ const refreshTokens = new Set();
 router.post('/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists. Please choose a different username.' });
+    }
+    
     const user = new User({ username, password, role });
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    if (error.code === 11000) {
+      res.status(400).json({ error: 'Username already exists. Please choose a different username.' });
+    } else {
+      res.status(400).json({ error: error.message });
+    }
   }
 });
 
@@ -77,6 +89,72 @@ router.post('/logout', (req, res) => {
     refreshTokens.delete(refreshToken);
   }
   res.json({ message: 'Logged out successfully' });
+});
+
+// Get admin's users
+router.get('/users', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const users = await User.find({ adminId: req.user.userId }).select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create user (admin only)
+router.post('/create-user', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { username, password } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    const user = new User({
+      username,
+      password,
+      role: 'user',
+      adminId: req.user.userId
+    });
+    
+    await user.save();
+    res.status(201).json({ message: 'User created successfully' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/users/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const user = await User.findOneAndDelete({
+      _id: req.params.id,
+      adminId: req.user.userId,
+      role: 'user'
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;

@@ -17,7 +17,12 @@ const questionSchema = new mongoose.Schema({
     max: { type: Number }
   },
   order: { type: Number, default: 0 },
-  isRemarkField: { type: Boolean, default: false } // To identify remark fields
+  isRemarkField: { type: Boolean, default: false }, // To identify remark fields
+  formId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Form',
+    required: true
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Question', questionSchema);

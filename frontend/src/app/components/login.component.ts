@@ -36,7 +36,6 @@ import { CommonModule } from '@angular/common';
           <div class="form-group" *ngIf="isRegister">
             <label>Role <span class="required">*</span></label>
             <select formControlName="role">
-              <option value="user">User</option>
               <option value="admin">Administrator</option>
             </select>
           </div>
@@ -50,7 +49,7 @@ import { CommonModule } from '@angular/common';
               {{ isRegister ? 'Create Account' : 'Sign In' }}
             </button>
             <button type="button" class="btn btn-outline" (click)="toggleMode()">
-              {{ isRegister ? 'Back to Login' : 'Create Account' }}
+              {{ isRegister ? 'Back to Login' : 'Register as Admin' }}
             </button>
           </div>
         </form>
@@ -71,7 +70,7 @@ export class LoginComponent {
     this.authForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required],
-      role: ['user']
+      role: ['admin']
     });
   }
 
@@ -84,8 +83,15 @@ export class LoginComponent {
           next: () => {
             this.isRegister = false;
             this.error = '';
+            alert('Admin account created successfully! You can now login.');
           },
-          error: (err) => this.error = err.error.error
+          error: (err) => {
+            if (err.error.error && err.error.error.includes('duplicate key')) {
+              this.error = 'Username already exists. Please choose a different username.';
+            } else {
+              this.error = err.error.error || 'Registration failed';
+            }
+          }
         });
       } else {
         this.authService.login(username, password).subscribe({
