@@ -117,7 +117,7 @@ PORT=3000
 NODE_ENV=production
 
 # MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dynamicforms
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
@@ -334,7 +334,7 @@ export const environment = {
 ```env
 PORT=3000
 NODE_ENV=production
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/dynamicforms
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
 JWT_SECRET=your-super-secret-jwt-key-here
 REFRESH_SECRET=your-super-secret-refresh-key-here
 JWT_EXPIRE=15m
